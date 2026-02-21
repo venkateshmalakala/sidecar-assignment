@@ -1,0 +1,153 @@
+services:
+  log-aggregator:
+    build: ./mock-aggregator
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  user-service:
+    build: ./app-service
+    environment:
+      - SERVICE_NAME=user-service
+      - PORT=3000
+    volumes:
+      - user_logs:/var/log/app
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; exit(0) if urllib.request.urlopen('http://localhost:3000/health').getcode() == 200 else exit(1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user-log-sidecar:
+    build: ./sidecar-logger
+    environment:
+      - SERVICE_NAME=user-service
+      - ENVIRONMENT=production
+      - LOG_AGGREGATOR_URL=http://log-aggregator:8080/logs
+    volumes:
+      - user_logs:/var/log/app:ro
+    depends_on:
+      user-service:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  user-metrics-sidecar:
+    build: ./sidecar-metrics
+    environment:
+      - SERVICE_NAME=user-service
+      - ENVIRONMENT=production
+      - APP_METRICS_URL=http://user-service:3000/metrics
+      - PORT=9100
+    ports:
+      - "9101:9100"
+    depends_on:
+      user-service:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  product-service:
+    build: ./app-service
+    environment:
+      - SERVICE_NAME=product-service
+      - PORT=3000
+    volumes:
+      - product_logs:/var/log/app
+    ports:
+      - "3002:3000"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; exit(0) if urllib.request.urlopen('http://localhost:3000/health').getcode() == 200 else exit(1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  product-log-sidecar:
+    build: ./sidecar-logger
+    environment:
+      - SERVICE_NAME=product-service
+      - ENVIRONMENT=production
+      - LOG_AGGREGATOR_URL=http://log-aggregator:8080/logs
+    volumes:
+      - product_logs:/var/log/app:ro
+    depends_on:
+      product-service:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  product-metrics-sidecar:
+    build: ./sidecar-metrics
+    environment:
+      - SERVICE_NAME=product-service
+      - ENVIRONMENT=production
+      - APP_METRICS_URL=http://product-service:3000/metrics
+      - PORT=9100
+    ports:
+      - "9102:9100"
+    depends_on:
+      product-service:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  order-service:
+    build: ./app-service
+    environment:
+      - SERVICE_NAME=order-service
+      - PORT=3000
+    volumes:
+      - order_logs:/var/log/app
+    ports:
+      - "3003:3000"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; exit(0) if urllib.request.urlopen('http://localhost:3000/health').getcode() == 200 else exit(1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-log-sidecar:
+    build: ./sidecar-logger
+    environment:
+      - SERVICE_NAME=order-service
+      - ENVIRONMENT=production
+      - LOG_AGGREGATOR_URL=http://log-aggregator:8080/logs
+    volumes:
+      - order_logs:/var/log/app:ro
+    depends_on:
+      order-service:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  order-metrics-sidecar:
+    build: ./sidecar-metrics
+    environment:
+      - SERVICE_NAME=order-service
+      - ENVIRONMENT=production
+      - APP_METRICS_URL=http://order-service:3000/metrics
+      - PORT=9100
+    ports:
+      - "9103:9100"
+    depends_on:
+      order-service:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  user_logs:
+  product_logs:
+  order_logs:
+
+networks:
+  app-network:
