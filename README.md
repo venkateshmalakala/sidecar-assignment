@@ -65,7 +65,7 @@ sidecar-assignment/
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/sunil-polupalli/sidecar-assignment.git
+git clone https://github.com/venkateshmalakala/sidecar-assignment.git
 cd sidecar-assignment
 
 ```
